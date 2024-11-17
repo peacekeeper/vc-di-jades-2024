@@ -1,0 +1,1 @@
+{"created":"2023-02-24T23:36:38Z","cryptosuite":"jades-jcs-2024","proofPurpose":"assertionMethod","type":"DataIntegrityProof","verificationMethod":"did:key:zDnaepBuvsQ8cpsWrVKw8fbpGpvPeNSjVPTWoq6cRqaYzBKVP#zDnaepBuvsQ8cpsWrVKw8fbpGpvPeNSjVPTWoq6cRqaYzBKVP"}

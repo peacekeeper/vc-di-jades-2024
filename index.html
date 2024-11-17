@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Data Integrity JAdES Cryptosuites v1.0</title>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <script src="//www.w3.org/Tools/respec/respec-w3c" class="remove"></script>
+    <script class="remove" src="https://w3c.github.io/vc-data-integrity/common.js"></script>
+    <script class='remove'>
+      // See https://github.com/w3c/respec/wiki/ for how to configure ReSpec
+      var respecConfig = {
+        group: "vc",
+
+        // specification status (e.g., WD, NOTE, etc.). If in doubt use ED.
+        specStatus: "ED", 
+
+        // the specification's short name, as in http://www.w3.org/TR/short-name/
+        shortName: "vc-di-jades-2024",
+        
+        // if you wish the publication date to be other than today, set this
+        publishDate: "2024-10-20",
+
+        // implementationReportURI: "https://w3c.github.io/vc-test-suite/implementations/",
+        // errata: "https://w3c.github.io/vc-data-model/errata.html",
+        // previousMaturity: "REC",
+        // previousPublishDate: "2019-11-19",
+
+        // if there is a previously published draft, uncomment this and set its YYYY-MM-DD date
+        // and its maturity status
+        // previousPublishDate:  "1977-03-15",
+        // previousMaturity:  "WD",
+
+        // extend the bibliography entries
+        // localBiblio: vcwg.localBiblio,
+        doJsonLd: true,
+
+        // Uncomment these to use the respec extension that generates a list of
+        //   normative statements:
+        // preProcess: [],
+        // postProcess: [],
+
+        github: "https://github.com/peacekeeper/vc-di-jades-2024/",
+        includePermalinks: false,
+
+        // if there a publicly available Editor's Draft, this is the link
+        edDraftURI: "https://peacekeeper.github.io/vc-di-jades-2024/",
+
+        // https://github.com/w3c/vc-di-jades-2024/pull/26#issuecomment-1297348484
+        // latestVersion: "https://www.w3.org/community/reports/credentials/CG-FINAL-lds-jws2020-20220721/",
+
+        // editors, add as many as you like
+        // only "name" is required
+        editors: [
+          {
+            name: "Markus Sabadello",
+            url: "https://www.linkedin.com/in/markus-sabadello-353a0821",
+            company: "Danube Tech",
+            companyURL: "https://danubetech.com/",
+            w3cid: 46729
+          },
+        ],
+        // authors, add as many as you like.
+        // This is optional, uncomment if you have authors as well as editors.
+        // only "name" is required. Same format as editors.
+        authors:
+        [],
+
+        maxTocLevel: 4,
+        inlineCSS: true,
+
+        license: "w3c-software-doc",
+        localBiblio: {
+          ISO_8601: {
+            title: "ISO_8601",
+            href: "https://en.wikipedia.org/wiki/ISO_8601",
+          },
+          IANA_JOSE: {
+            title: "JOSE",
+            href: "https://www.iana.org/assignments/jose/jose.xhtml",
+          }
+        },
+        xref: ["INFRA", "VC-DATA-MODEL-2.0", "VC-DATA-INTEGRITY"],
+        lint: { "informative-dfn": false },
+        otherLinks: [{
+          key: "Related Specifications",
+          data: [{
+            value: "The Verifiable Credentials Data Model v2.0",
+            href: "https://www.w3.org/TR/vc-data-model-2.0/"
+          }, {
+            value: "Verifiable Credential Data Integrity v1.0",
+            href: "https://www.w3.org/TR/vc-data-integrity/"
+          }, {
+            value: "Controller Documents v1.0",
+            href: "https://www.w3.org/TR/controller-document/"
+          }, {
+            value: "Data Integrity EdDSA Cryptosuites v1.0",
+            href: "https://www.w3.org/TR/vc-di-eddsa/"
+          }, {
+            value: "Data Integrity BBS Cryptosuites v1.0",
+            href: "https://www.w3.org/TR/vc-di-bbs/"
+          }]
+        }]
+
+      };
+    </script>
+  </head>
+  <body>
+    <section id="abstract">
+      <p>
+        This specification describes Data Integrity cryptosuites for use with JSON Advanced
+        Electronic Signatures (JAdES - see <a href="https://www.etsi.org/deliver/etsi_ts/119100_119199/11918201/01.01.01_60/ts_11918201v010101p.pdf">ETSI TS 119 182-1</a>,
+        which is a set of extensions to JSON Web Signature ([[RFC7515]]) making it suitable for
+        Advanced Electronic Signatures.
+      </p>
+    </section>
+
+    <section id="sotd">
+
+      <p>
+        This document is currently a draft specification, outside of any particular
+        Working Group.
+      </p>
+
+    </section>
+
+    <section>
+      <h2>Introduction</h2>
+      <p>
+        This specification defines cryptographic suites for the purpose of
+        creating, verifying proofs for JAdES in conformance with
+        the Data Integrity Proofs specification.
+      </p>
+      <p>
+        The suite uses the RDF Dataset Normalization Algorithm
+        to transform an input document into its canonical form. 
+        The canonical representation is then hashed and signed
+        with a detached signature algorithm.
+      </p>
+    </section>
+
+    <section id="terminology">
+      <h2>Terminology</h2>
+      <p>
+        The following terms are used to describe concepts involved in the
+        generation and verification of the Linked Data Proof
+        <a>signature suite</a>.
+      </p>
+
+      <dl>
+        <dt><dfn>signature suite</dfn></dt>
+        <dd>
+          A specified set of cryptographic primitives typically consisting of a
+          canonicalization algorithm, a message digest algorithm, and a
+          signature algorithm that are bundled together by cryptographers for
+          developers for the purposes of safety and convenience.
+        </dd>
+        <dt><dfn>canonicalization algorithm</dfn></dt>
+        <dd>
+          An algorithm that takes an input document that has more than one
+          possible representation and always transforms it into a
+          <a>canonical form</a>. This process is sometimes also called
+          normalization.
+        </dd>
+        <dt>
+          <dfn data-lt="message digest algorithm | message digest algorithms"
+            >message digest algorithm</dfn
+          >
+        </dt>
+        <dd>
+          An algorithm that takes a message, preferably in some
+          <a>canonical form</a> and produces a cryptographic output called a
+          digest that is often many orders of magnitude smaller than the input
+          message. These algorithms are often 1) very fast, 2) non-reversible,
+          3) cause the output to change significantly when even one bit of the
+          input message changes, and 4) make it infeasible to find two different
+          inputs for the same output.
+        </dd>
+        <dt><dfn>canonical form</dfn></dt>
+        <dd>
+          The output of applying a <a>canonicalization algorithm</a> to an input
+          document.
+        </dd>
+        <dt><dfn>signature algorithm</dfn></dt>
+        <dd>
+          An algorithm that takes an input message and produces an output value
+          where the receiver of the message can mathematically verify that the
+          message has not been modified in transit and came from someone
+          possessing a particular secret.
+        </dd>
+        <dt>
+          <dfn data-lt="linked data document|linked data documents"
+            >linked data document</dfn
+          >
+        </dt>
+        <dd>A document comprised of linked data.</dd>
+        <dt>
+          <dfn data-lt="linked data proof|linked data proofs"
+            >linked data proof</dfn
+          >
+        </dt>
+        <dd>
+          A
+          <a
+            href="https://www.w3.org/TR/vc-data-integrity/#proofs"
+            class="externalDFN"
+            >proof</a
+          >
+          which is a set of attributes that represent a linked data digital
+          proof and the parameters required to verify it as defined by
+          RDF-N-Quads.
+        </dd>
+        <dt>linked data proof document</dt>
+        <dd>
+          A <a>linked data document</a> featuring one or more
+          <a>linked data proofs</a>.
+        </dd>
+
+      </dl>
+    </section>
+
+    <section id="data-model">
+      <h2>Data Model</h2>
+
+      <p>
+        The following sections outline the data model that is used by this specification
+        to express data integrity proofs, such as digital signatures.
+      </p>
+
+      <p>
+        The JAdES <a>signature suite</a> 2024 MUST be used in
+        conjunction with the signing and verification algorithms in the Data
+        Integrity Proofs specification. The suite consists of the
+        following algorithms:
+      </p>
+
+      <section id="algorithms">
+        <h3>Cryptographic Algorithms</h3>
+
+        <p>
+          This suite support cryptographic agility, see [[RFC7696]].
+          This table maps a key type to a subset of [[IANA_JOSE]] supported
+          signing and encryption algorithms.
+        </p>
+        <p>
+          This suite supports different <a>message digest algorithms</a> and
+          <a>signature algorithm</a>.
+        </p>
+
+      <table class="simple">
+        <thead>
+          <th>kty</th>
+          <th>crvOrSize</th>
+          <th>signature</th>
+          <th>keyAgreement</th>
+          <th>encryption</th>
+        </thead>
+        <tbody>
+          <tr>
+            <td>OKP</td>
+            <td>Ed25519</td>
+            <td>EdDSA</td>
+            <td></td>
+            <td>ECDH-ES+A256KW</td>
+          </tr>
+          <tr>
+            <td>OKP</td>
+            <td>X25519</td>
+            <td></td>
+            <td>ECDH</td>
+            <td>ECDH-ES+A256KW</td>
+          </tr>
+          <tr>
+            <td>EC</td>
+            <td>secp256k1</td>
+            <td>ES256K</td>
+            <td>ECDH</td>
+            <td>ECDH-ES+A256KW</td>
+          </tr>
+          <tr>
+            <td>EC</td>
+            <td>P-256</td>
+            <td>ES256</td>
+            <td>ECDH</td>
+            <td>ECDH-ES+A256KW</td>
+          </tr>
+          <tr>
+            <td>EC</td>
+            <td>P-384</td>
+            <td>ES384</td>
+            <td>ECDH</td>
+            <td>ECDH-ES+A256KW</td>
+          </tr>
+          <tr>
+            <td>RSA</td>
+            <td>2048+</td>
+            <td>PS256</td>
+            <td></td>
+            <td>RSA-OAEP</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+      <section>
+        <h2>Verification Methods</h2>
+        <p>
+          The cryptographic material used to verify a linked data proof is
+          called the verification method.
+        </p>
+
+        <p>
+          This suite relies on public key material represented using
+          [[RFC7517]].
+        </p>
+
+        <p>
+          This suite supports public key use for digital signature
+          verification, according to [[RFC7515]].
+        </p>
+
+        <p>
+          This suite MAY be used to verify linked data proofs produced by key
+          material in any representation that can be converted to JWK, however
+          it is RECOMMENDED that this suite be used with verification methods
+          of type <a href="https://w3c.github.io/controller-document/#JsonWebKey">JsonWebKey</a> or <a href="https://w3c.github.io/controller-document/#MultiKey">MultiKey</a>.
+        </p>
+
+      </section>
+
+      <section>
+        <h3>Proof Representations</h3>
+
+        <p>
+          This section details the proof representation formats that are defined by
+          this specification.
+        </p>
+
+        <section>
+          <h4>DataIntegrityProof</h4>
+
+          <p>
+            A proof contains the attributes specified in the
+            <a href="https://www.w3.org/TR/vc-data-integrity/#proofs">Proofs section</a>
+            of [[VC-DATA-INTEGRITY]] with the following restrictions.
+          </p>
+          <p>
+            The `type` property MUST be `DataIntegrityProof`.
+          </p>
+          <p>
+            The `cryptosuite` property MUST be `jades-rdfc-2024`,
+            or `jades-jcs-2019`.
+          </p>
+          <p>
+            The value of the `proofValue` property is produced according to
+            the `cryptosuite` type and is specified in either
+            Section [[[#create-proof-jades-rdfc-2024]]], or
+            Section [[[#create-proof-jades-jcs-2024]]].
+          </p>
+
+          <pre class="example nohighlight"
+               title="a JAdES P-256 digital signature expressed as a
+              DataIntegrityProof">
+{
+  "@context": [
+    {"myWebsite": "https://vocabulary.example/myWebsite"},
+    "https://www.w3.org/ns/credentials/v2"
+  ],
+  "myWebsite": "https://hello.world.example/",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "jades-rdfc-2024",
+    "created": "2023-02-24T23:36:38Z",
+    "verificationMethod": "https://vc.example/issuers/5678#zDnaepBuvsQ8cpsWrVKw8
+      fbpGpvPeNSjVPTWoq6cRqaYzBKVP",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z2iAR3F2Sk3mWfYyrinKzSQpSbvfxnz9kkv7roxxumB5RZDP9JUw5QAXuchUd
+      huiwE18hyyZTjiEreKmhH3oj9Q8"
+  }
+}
+          </pre>
+
+        </section>
+      </section>
+    </section>
+
+    <section>
+      <h2>Algorithms</h2>
+
+      <p>
+        The following section describes multiple Data Integrity cryptographic suites
+        that can utilize various signature algorithms (cryptographic agility).
+      </p>
+
+      <p>
+        Implementations SHOULD fetch and cache verification method information as
+        early as possible when adding or verifying proofs. Parameters passed to
+        functions in this section use information from the verification method
+        &mdash; such as the public key size &mdash; to determine function parameters
+        &mdash; such as the cryptographic hashing algorithm.
+      </p>
+
+      <p id="canon-and-hash">
+        When the RDF Dataset Canonicalization Algorithm (RDFC-1.0) [[RDF-CANON]] is used
+        with ECDSA algorithms, the cryptographic hashing function used by RDFC-1.0 is
+        chosen based on the size of the associated public key. For P-256 keys, the
+        default hashing function, SHA-2 with 256 bits of output, MUST be used. For P-384
+        keys, SHA-2 with 384-bits of output MUST be used, specified via the RDFC-1.0
+        <a data-cite="RDF-CANON#dfn-hash-algorithm">implementation-specific parameter</a>.
+      </p>
+
+      <p class="advisement">
+        When the RDF Dataset Canonicalization Algorithm [[RDF-CANON]] is used,
+        implementations of that algorithm will detect
+        <a data-cite="RDF-CANON#dataset-poisoning">dataset poisoning</a>
+        by default, and abort processing upon detection.
+      </p>
+
+      <section>
+        <h3>Instantiate Cryptosuite</h3>
+
+        <p>
+          This algorithm is used to configure a cryptographic suite to be used by the
+          <a data-cite="VC-DATA-INTEGRITY#add-proof">Add Proof</a> and
+          <a href="VC-DATA-INTEGRITY#verify-proof">Verify Proof</a>
+          functions in [[[VC-DATA-INTEGRITY]]]. The algorithm takes an options object
+          ([=map=] |options|) as input and returns a [=data integrity cryptographic suite
+          instance|cryptosuite instance=] ([=struct=] |cryptosuite|).
+        </p>
+
+        <ol class="algorithm">
+          <li>
+            Initialize |cryptosuite| to an empty [=struct=].
+          </li>
+          <li>
+            If |options|.|type| does not equal `DataIntegrityProof`, return |cryptosuite|.
+          </li>
+          <li>
+            If |options|.|cryptosuite| is `jades-rdfc-2024` then:
+            <ol class="algorithm">
+              <li>
+                Set |cryptosuite|.|createProof| to the algorithm in Section
+                [[[#create-proof-jades-rdfc-2024]]].
+              </li>
+              <li>
+                Set |cryptosuite|.|verifyProof| to the algorithm in Section
+                [[[#proof-verification-jades-rdfc-2024]]].
+              </li>
+            </ol>
+          </li>
+          <li>
+            If |options|.|cryptosuite| is `jades-jcs-2024` then:
+            <ol class="algorithm">
+              <li>
+                Set |cryptosuite|.|createProof| to the algorithm in Section
+                [[[#create-proof-jades-jcs-2024]]].
+              </li>
+              <li>
+                Set |cryptosuite|.|verifyProof| to the algorithm in Section
+                [[[#proof-verification-jades-jcs-2024]]].
+              </li>
+            </ol>
+          </li>
+          <li>
+            Return |cryptosuite|.
+          </li>
+        </ol>
+
+      </section>
+
+      <section>
+        <h3>jades-rdfc-2024</h3>
+
+        <p>
+          The `jades-rdfc-2024` cryptographic suite takes an input document, canonicalizes
+          the document using the [[[RDF-CANON]]]
+          [[RDF-CANON]], and then cryptographically hashes and signs the output
+          resulting in the production of a data integrity proof. The algorithms in this
+          section also include the verification of such a data integrity proof.
+        </p>
+
+        <section>
+          <h4>Create Proof (jades-rdfc-2024)</h4>
+
+          <p>
+            The following algorithm specifies how to create a [=data integrity proof=] given
+            an <a>unsecured data document</a>. Required inputs are an
+            <a>unsecured data document</a> ([=map=] |unsecuredDocument|), and a set of proof
+            options ([=map=] |options|). A [=data integrity proof=] ([=map=]), or an error,
+            is produced as output.
+          </p>
+
+          <ol class="algorithm">
+            <li>
+              Let |proof| be a clone of the proof options, |options|.
+            </li>
+            <li>
+              Let |proofConfig| be the result of running the algorithm in
+              Section [[[#proof-configuration-jades-rdfc-2024]]] with
+              |options| passed as a parameter.
+            </li>
+            <li>
+              Let |transformedData| be the result of running the algorithm in Section <a
+                    href="#transformation-jades-rdfc-2024"></a> with |unsecuredDocument|,
+              |proofConfig|, and |options| passed as parameters.
+            </li>
+            <li>
+              Let |hashData| be the result of running the algorithm in Section
+              [[[#hashing-jades-rdfc-2024]]] with |transformedData| and |proofConfig|
+              passed as a parameters.
+            </li>
+            <li>
+              Let |proofBytes| be the result of running the algorithm in Section
+              [[[#proof-serialization-jades-rdfc-2024]]] with |hashData| and
+              |options| passed as parameters.
+            </li>
+            <li>
+              Let |proof|.|proofValue| be a <a data-cite="controller-document#multibase-0">
+              base58-btc-encoded Multibase value</a> of the |proofBytes|.
+            </li>
+            <li>
+              Return |proof| as the [=data integrity proof=].
+            </li>
+          </ol>
+
+        </section>
+
+        <section>
+          <h4>Verify Proof (jades-rdfc-2024)</h4>
+
+          <p>
+            The following algorithm specifies how to verify a [=data integrity proof=] given
+            an <a>secured data document</a>. Required inputs are an
+            <a>secured data document</a> ([=map=] |securedDocument|). This algorithm returns
+            a <dfn>verification result</dfn>, which is a [=struct=] whose
+            [=struct/items=] are:
+          </p>
+          <dl>
+            <dt><dfn data-dfn-for="verification result">verified</dfn></dt>
+            <dd>`true` or `false`</dd>
+            <dt><dfn data-dfn-for="verification result">verifiedDocument</dfn></dt>
+            <dd>
+              <a data-cite="INFRA#nulls">Null</a>, if [=verification result/verified=] is
+              `false`; otherwise, an [=unsecured data document=]
+            </dd>
+          </dl>
+
+          <ol class="algorithm">
+            <li>
+              Let |unsecuredDocument| be a copy of |securedDocument| with
+              the `proof` value removed.
+            </li>
+            <li>
+              Let |proofConfig| be a copy of |securedDocument|.|proof| with `proofValue`
+              removed.
+            </li>
+            <li>
+              Let |proofBytes| be the
+              <a data-cite="controller-document#multibase-0">Multibase decoded base58-btc
+                value</a> in |securedDocument|.|proof|.|proofValue|.
+            </li>
+            <li>
+              Let |transformedData| be the result of running the algorithm in Section <a
+                    href="#transformation-jades-rdfc-2024"></a> with |unsecuredDocument| and
+              |proofConfig| passed as parameters.
+            </li>
+            <li>
+              Let |hashData| be the result of running the algorithm in Section
+              [[[#hashing-jades-rdfc-2024]]] with |transformedData| and |proofConfig|
+              passed as a parameters.
+            </li>
+            <li>
+              Let |verified:boolean| be the result of running the algorithm in Section
+              [[[#proof-verification-jades-rdfc-2024]]] algorithm on |hashData|,
+              |proofBytes|, and |proofConfig|.
+            </li>
+            <li>
+              Return a [=verification result=] with [=struct/items=]:
+              <dl data-link-for="verification result">
+                <dt>[=verified=]</dt>
+                <dd>|verified|</dd>
+                <dt>[=verifiedDocument=]</dt>
+                <dd>
+                  |unsecuredDocument| if |verified| is `true`, otherwise <a data-cite="INFRA#nulls">Null</a></dd>
+              </dl>
+            </li>
+          </ol>
+
+        </section>
+
+        <section>
+          <h4>Transformation (jades-rdfc-2024)</h4>
+
+          <p>
+            The following algorithm specifies how to transform an unsecured input document
+            into a transformed document that is ready to be provided as input to the
+            hashing algorithm in Section [[[#hashing-jades-rdfc-2024]]].
+          </p>
+
+          <p>
+            Required inputs to this algorithm are an
+            <a data-cite="vc-data-integrity#dfn-unsecured-data-document">
+              unsecured data document</a> (|unsecuredDocument|) and
+            transformation options (|options|). The
+            transformation options MUST contain a type identifier for the
+            <a data-cite="vc-data-integrity#dfn-cryptosuite">
+              cryptographic suite</a> (|type|) and a cryptosuite
+            identifier (|cryptosuite|). A <em>transformed data document</em> is
+            produced as output. Whenever this algorithm encodes strings, it MUST use UTF-8
+            encoding.
+          </p>
+
+          <ol class="algorithm">
+            <li>
+              If |options|.|type| is not set to the string
+              `DataIntegrityProof` and |options|.|cryptosuite| is not
+              set to the string `jades-rdfc-2024`,
+              an error MUST be raised and SHOULD convey an error type of
+              <a data-cite="VC-DATA-INTEGRITY#PROOF_TRANSFORMATION_ERROR">PROOF_TRANSFORMATION_ERROR</a>.
+            </li>
+            <li>
+              Let |canonicalDocument| be the result of converting |unsecuredDocument| to
+              <a data-cite="JSON-LD11-API#expansion-algorithm">JSON-LD expanded form</a>
+              and then <a data-cite="JSON-LD11-API#deserialize-json-ld-to-rdf-algorithm">
+              to RDF statements</a>, applying the <a data-cite="RDF-CANON#canon-algorithm">RDF Dataset Canonicalization
+              Algorithm</a> [[RDF-CANON]] to the result, and then serializing the result to a
+              <a data-cite="RDF-CANON#dfn-serialized-canonical-form">serialized canonical form</a> [[RDF-CANON]].
+              For canonicalization, one is expected to use a hash algorithm that has an appropriate security level for
+              the curve used; see <a href="#canon-and-hash">further details</a>.
+            </li>
+            <li>
+              Return |canonicalDocument| as the <em>transformed data document</em>.
+            </li>
+          </ol>
+        </section>
+
+        <section>
+          <h4>Hashing (jades-rdfc-2024)</h4>
+
+          <p>
+            The following algorithm specifies how to cryptographically hash a
+            <em>transformed data document</em> and <em>proof configuration</em>
+            into cryptographic hash data that is ready to be provided as input to the
+            algorithms in Section [[[#proof-serialization-jades-rdfc-2024]]] or
+            Section [[[#proof-verification-jades-rdfc-2024]]]. One must use the hash
+            algorithm appropriate in security level to the curve used, i.e., for curve
+            P-256 one uses SHA-256 and for curve P-384 one uses SHA-384.
+          </p>
+
+          <p>
+            The required inputs to this algorithm are a <em>transformed data document</em>
+            (|transformedDocument|) and <em>canonical proof configuration</em>
+            (|canonicalProofConfig|). A single <em>hash data</em> value represented as
+            series of bytes is produced as output.
+          </p>
+
+          <ol class="algorithm">
+            <li>
+              Let |transformedDocumentHash| be the result of applying the
+              SHA-256 (SHA-2 with 256-bit output) or SHA-384 (SHA-2 with 384-bit output)
+              cryptographic hashing algorithm [[RFC6234]] to the
+              respective curve P-256 or curve P-384 |transformedDocument|.
+              Respective |transformedDocumentHash| will be exactly 32 or 48 bytes
+              in size.
+            </li>
+            <li>
+              Let |proofConfigHash| be the result of applying the
+              SHA-256 (SHA-2 with 256-bit output) or SHA-384 (SHA-2 with 384-bit output)
+              cryptographic hashing algorithm [[RFC6234]] to the respective curve P-256 or curve P-384
+              |canonicalProofConfig|. Respective |proofConfigHash|
+              will be exactly 32 or 48 bytes in size.
+            </li>
+            <li>
+              Let |hashData| be the result of joining |proofConfigHash| (the
+              first hash) with |transformedDocumentHash| (the second hash).
+            </li>
+            <li>
+              Return |hashData| as the <em>hash data</em>.
+            </li>
+          </ol>
+
+        </section>
+
+        <section>
+          <h4>Proof Configuration (jades-rdfc-2024)</h4>
+
+          <p>
+            The following algorithm specifies how to generate a
+            <em>proof configuration</em> from a set of <em>proof options</em>
+            that is used as input to the <a href="#hashing-jades-rdfc-2024">proof hashing algorithm</a>.
+          </p>
+
+          <p>
+            The required inputs to this algorithm are <em>proof options</em>
+            (|options|). The <em>proof options</em> MUST contain a type identifier
+            for the
+            <a data-cite="vc-data-integrity#dfn-cryptosuite">
+              cryptographic suite</a> (|type|) and MUST contain a cryptosuite
+            identifier (|cryptosuite|). A <em>proof configuration</em>
+            object is produced as output.
+          </p>
+
+          <ol class="algorithm">
+            <li>
+              Let |proofConfig| be a clone of the |options| object.
+            </li>
+            <li>
+              If |proofConfig|.|type| is not set to `DataIntegrityProof` and/or
+              |proofConfig|.|cryptosuite| is not set to `jades-rdfc-2024`, an
+              error MUST be raised and SHOULD convey an error type of
+              <a data-cite="VC-DATA-INTEGRITY#PROOF_GENERATION_ERROR">PROOF_GENERATION_ERROR</a>.
+            </li>
+            <li>
+              If |proofConfig|.|created| is set and if the value is not a
+              valid [[XMLSCHEMA11-2]] datetime, an error MUST be
+              raised and SHOULD convey an error type of
+              <a data-cite="VC-DATA-INTEGRITY#PROOF_GENERATION_ERROR">PROOF_GENERATION_ERROR</a>.
+            </li>
+            <li>
+              Set |proofConfig|.<var>@context</var> to
+              |unsecuredDocument|.<var>@context</var>.
+            </li>
+            <li>
+              Let |canonicalProofConfig| be the result of applying the
+              [[[RDF-CANON]]] [[RDF-CANON]] to the |proofConfig|.
+            </li>
+            <li>
+              Return |canonicalProofConfig|.
+            </li>
+          </ol>
+
+        </section>
+
+        <section>
+          <h4>Proof Serialization (jades-rdfc-2024)</h4>
+
+          <p>
+            The following algorithm specifies how to serialize a digital signature from
+            a set of cryptographic hash data. This
+            algorithm is designed to be used in conjunction with the algorithms defined
+            in the Data Integrity [[VC-DATA-INTEGRITY]] specification,
+            <a data-cite="vc-data-integrity#algorithms">
+              Section 4: Algorithms</a>. Required inputs are
+            cryptographic hash data (|hashData|) and
+            <em>proof options</em> (|options|). The
+            <em>proof options</em> MUST contain a type identifier for the
+            <a data-cite="vc-data-integrity#dfn-cryptosuite">
+              cryptographic suite</a> (|type|) and MAY contain a cryptosuite
+            identifier (|cryptosuite|). A single <em>digital proof</em> value
+            represented as series of bytes is produced as output.
+          </p>
+
+          <ol class="algorithm">
+            <li>
+              Let |privateKeyBytes| be the result of retrieving the
+              private key bytes (or a signing interface enabling the use of the private key
+              bytes) associated with the verification method identified by the
+              |options|.|verificationMethod| value.
+            </li>
+            <li>
+              Let |proofBytes| be the result of applying the applicable
+              signature algorithm, with |hashData| as the data
+              to be signed using the private key specified by |privateKeyBytes|.
+              |proofBytes| will be exactly 64 bytes in size for a P-256 key, and
+              96 bytes in size for a P-384 key.
+            </li>
+            <li>
+              Return |proofBytes| as the <em>digital proof</em>.
+            </li>
+          </ol>
+
+        </section>
+
+        <section>
+          <h4>Proof Verification (jades-rdfc-2024)</h4>
+
+          <p>
+            The following algorithm specifies how to verify a digital signature from
+            a set of cryptographic hash data. This
+            algorithm is designed to be used in conjunction with the algorithms defined
+            in the Data Integrity [[VC-DATA-INTEGRITY]] specification,
+            <a data-cite="vc-data-integrity#algorithms">
+              Section 4: Algorithms</a>. Required inputs are
+            cryptographic hash data (|hashData|),
+            a digital signature (|proofBytes|), and
+            proof options (|options|). A <em>verification result</em>
+            represented as a boolean value is produced as output.
+          </p>
+
+          <ol class="algorithm">
+            <li>
+              Let |publicKeyBytes| be the result of retrieving the
+              public key bytes associated with the
+              |options|.|verificationMethod| value as described in the
+              [[[controller-document]]] specification,
+              <a data-cite="controller-document#retrieve-verification-method">
+                Section: Retrieve Verification Method</a>.
+            </li>
+            <li>
+              Let |verificationResult| be the result of applying the applicable
+              verification algorithm,
+              with |hashData| as the data to be verified against the
+              |proofBytes| using the public key specified by
+              |publicKeyBytes|.
+            </li>
+            <li>
+              Return |verificationResult| as the <em>verification result</em>.
+            </li>
+          </ol>
+
+        </section>
+      </section>
+      <section>
+        <h3>jades-jcs-2024</h3>
+
+        <p>
+          The `jades-jcs-2024` cryptographic suite takes an input document, canonicalizes
+          the document using the JSON Canonicalization Scheme [[RFC8785]], and then
+          cryptographically hashes and signs the output
+          resulting in the production of a data integrity proof. The algorithms in this
+          section also include the verification of such a data integrity proof.
+        </p>
+
+        <section>
+          <h4>Create Proof (jades-jcs-2024)</h4>
+          <p>
+            The following algorithm specifies how to create a [=data integrity proof=] given
+            an <a>unsecured data document</a>. Required inputs are an
+            <a>unsecured data document</a> ([=map=] |unsecuredDocument|), and a set of proof
+            options ([=map=] |options|). A [=data integrity proof=] ([=map=]), or an error,
+            is produced as output.
+          </p>
+
+          <ol class="algorithm">
+            <li>
+              Let |proof| be a clone of the proof options, |options|.
+            </li>
+            <li>
+              If <var>unsecuredDocument</var>.<var>@context</var> is present, set
+              <var>proof</var>.<var>@context</var> to
+              <var>unsecuredDocument</var>.<var>@context</var>.
+            </li>
+            <li>
+              Let |proofConfig| be the result of running the algorithm in
+              Section [[[#proof-configuration-jades-jcs-2024]]] with
+              |proof| passed as the <em>proof options</em> parameter.
+            </li>
+            <li>
+              Let |transformedData| be the result of running the algorithm in Section <a
+                    href="#transformation-jades-jcs-2024"></a> with |unsecuredDocument|
+              and |options| passed as parameters.
+            </li>
+            <li>
+              Let |hashData| be the result of running the algorithm in Section
+              [[[#hashing-jades-jcs-2024]]] with |transformedData| and |proofConfig|
+              passed as a parameters.
+            </li>
+            <li>
+              Let |proofBytes| be the result of running the algorithm in Section
+              [[[#proof-serialization-jades-jcs-2024]]] with |hashData| and
+              |options| passed as parameters.
+            </li>
+            <li>
+              Let |proof|.|proofValue| be a <a data-cite="controller-document#multibase-0">
+              base58-btc-encoded Multibase value</a> of the |proofBytes|.
+            </li>
+            <li>
+              Return |proof| as the [=data integrity proof=].
+            </li>
+          </ol>
+        </section>
+
+        <section>
+          <h4>Verify Proof (jades-jcs-2024)</h4>
+          <p>
+            The following algorithm specifies how to verify a [=data integrity proof=] given
+            an <a>secured data document</a>. Required inputs are an
+            <a>secured data document</a> ([=map=] |securedDocument|). This algorithm returns
+            a [=verification result=], which is a [=struct=] whose [=struct/items=] are:
+          </p>
+
+          <dl>
+            <dt>[=verification result/verified=]</dt>
+            <dd>`true` or `false`</dd>
+            <dt>[=verification result/verifiedDocument=]</dt>
+            <dd>
+              if [=verification result/verified=] is `true`, an [=unsecured data document=];
+              otherwise <a data-cite="INFRA#nulls">Null</a>
+            </dd>
+          </dl>
+
+          <ol class="algorithm">
+            <li>
+              Let |unsecuredDocument| be a copy of |securedDocument| with the `proof` value
+              removed.
+            </li>
+            <li>
+              Let |proofOptions| be the result of a copy of |securedDocument|.|proof| with
+              `proofValue` removed.
+            </li>
+            <li>
+              Let |proofBytes| be the
+              <a data-cite="controller-document#multibase-0">Multibase decoded base58-btc
+                value</a> in |securedDocument|.|proof|.|proofValue|.
+            </li>
+            <li>
+              If |proofOptions|.<var>@context</var> exists:
+              <ol class="algorithm">
+                <li>
+                  Check that the |securedDocument|.<var>@context</var> starts with all values
+                  contained in the |proofOptions|.<var>@context</var> in the same order.
+                  Otherwise, set |verified| to `false` and skip to the last step.
+                </li>
+                <li>
+                  Set |unsecuredDocument|.<var>@context</var> equal to
+                  |proofOptions|.<var>@context</var>.
+                </li>
+              </ol>
+            </li>
+            <li>
+              Let |transformedData| be the result of running the algorithm in Section
+              [[[#transformation-jades-jcs-2024]]] with |unsecuredDocument| and
+              |proofOptions| passed as parameters.
+            </li>
+            <li>
+              Let |proofConfig| be the result of running the algorithm in Section
+              [[[#proof-configuration-jades-jcs-2024]]] with |proofOptions| passed
+              as the parameter.
+            </li>
+            <li>
+              Let |hashData| be the result of running the algorithm in Section
+              [[[#hashing-jades-jcs-2024]]] with |transformedData| and |proofConfig| passed as
+              a parameters.
+            </li>
+            <li>
+              Let |verified:boolean| be the result of running the algorithm in Section
+              [[[#proof-verification-jades-jcs-2024]]] on |hashData|, |proofBytes|, and
+              |proofConfig|.
+            </li>
+            <li>
+              Return a [=verification result=] with [=struct/items=]:
+              <dl data-link-for="verification result">
+                <dt>[=verified=]</dt>
+                <dd>|verified|</dd>
+                <dt>[=verifiedDocument=]</dt>
+                <dd>
+                  if |verified| is `true`, |unsecuredDocument|;
+                  otherwise, <a data-cite="INFRA#nulls">Null</a></dd>
+              </dl>
+            </li>
+          </ol>
+        </section>
+
+        <section>
+          <h4>Transformation (jades-jcs-2024)</h4>
+
+          <p>
+            The following algorithm specifies how to transform an unsecured input document
+            into a transformed document that is ready to be provided as input to the
+            hashing algorithm in Section [[[#hashing-jades-jcs-2024]]].
+          </p>
+
+          <p>
+            Required inputs to this algorithm are an
+            <a data-cite="vc-data-integrity#dfn-unsecured-data-document">
+              unsecured data document</a> (|unsecuredDocument|) and
+            transformation options (|options|). The
+            transformation options MUST contain a type identifier for the
+            <a data-cite="vc-data-integrity#dfn-cryptosuite">
+              cryptographic suite</a> (|type|) and a cryptosuite
+            identifier (|cryptosuite|). A <em>transformed data document</em> is
+            produced as output. Whenever this algorithm encodes strings, it MUST use UTF-8
+            encoding.
+          </p>
+
+          <ol class="algorithm">
+            <li>
+              If |options|.|type| is not set to the string
+              `DataIntegrityProof` or |options|.|cryptosuite| is not
+              set to the string `jades-jcs-2024`, an error MUST be raised and SHOULD
+              convey an error type of
+              <a data-cite="VC-DATA-INTEGRITY#PROOF_TRANSFORMATION_ERROR">PROOF_TRANSFORMATION_ERROR</a>.
+            </li>
+            <li>
+              Let |canonicalDocument| be the result of applying the
+              JSON Canonicalization Scheme [[RFC8785]] to a JSON serialization of the
+              |unsecuredDocument|.
+            </li>
+            <li>
+              Return |canonicalDocument| as the <em>transformed data document</em>.
+            </li>
+          </ol>
+        </section>
+
+        <section>
+          <h4>Hashing (jades-jcs-2024)</h4>
+
+          <p>
+            The following algorithm specifies how to cryptographically hash a
+            <em>transformed data document</em> and <em>proof configuration</em>
+            into cryptographic hash data that is ready to be provided as input to the
+            algorithms in Section [[[#proof-serialization-jades-jcs-2024]]] or
+            Section [[[#proof-verification-jades-jcs-2024]]]. One must use the
+            hash algorithm appropriate in security level to the curve used, i.e., for curve
+            P-256 one uses SHA-256, and for curve P-384 one uses SHA-384.
+          </p>
+
+          <p>
+            The required inputs to this algorithm are a <em>transformed data document</em>
+            (|transformedDocument|) and a <em>canonical proof configuration</em>
+            (|canonicalProofConfig|). A single <em>hash data</em> value represented as
+            series of bytes is produced as output.
+          </p>
+
+          <ol class="algorithm">
+            <li>
+              Let |transformedDocumentHash| be the result of applying the SHA-256
+              (SHA-2 with 256-bit output) or SHA-384 (SHA-2 with 384-bit output)
+              cryptographic hashing algorithm [[RFC6234]] to the
+              respective curve P-256 or curve P-384 |transformedDocument|.
+              Respective |transformedDocumentHash| will be exactly 32 or 48 bytes
+              in size.
+            </li>
+            <li>
+              Let |proofConfigHash| be the result of applying the SHA-256
+              (SHA-2 with 256-bit output) or SHA-384 (SHA-2 with 384-bit output)
+              cryptographic hashing algorithm [[RFC6234]] to the
+              respective curve P-256 or curve P-384 |canonicalProofConfig|.
+              Respective |proofConfigHash| will be exactly 32 or 48 bytes in size.
+            </li>
+            <li>
+              Let |hashData| be the result of concatenating |proofConfigHash| (the
+              first hash) followed by |transformedDocumentHash| (the second hash).
+            </li>
+            <li>
+              Return |hashData| as the <em>hash data</em>.
+            </li>
+          </ol>
+
+        </section>
+
+        <section>
+          <h4>Proof Configuration (jades-jcs-2024)</h4>
+
+          <p>
+            The following algorithm specifies how to generate a
+            <em>proof configuration</em> from a set of <em>proof options</em>
+            that is used as input to the
+            <a href="#hashing-jades-jcs-2024">proof hashing algorithm</a>.
+          </p>
+          <p>
+            The required inputs to this algorithm are the <em>proof options</em>
+            (|options|). The <em>proof options</em> MUST contain a type identifier
+            for the
+            <a data-cite="vc-data-integrity#dfn-cryptosuite">
+              cryptographic suite</a> (|type|) and MUST contain a cryptosuite
+            identifier (|cryptosuite|). A <em>proof configuration</em>
+            object is produced as output.
+          </p>
+
+          <ol class="algorithm">
+            <li>
+              Let |proofConfig| be a clone of the |options| object.
+            </li>
+            <li>
+              If |proofConfig|.|type| is not set to `DataIntegrityProof` and/or
+              |proofConfig|.|cryptosuite| is not set to `jades-jcs-2024`,
+              an error MUST be raised and SHOULD convey an error type of
+              <a data-cite="VC-DATA-INTEGRITY#PROOF_GENERATION_ERROR">PROOF_GENERATION_ERROR</a>.
+            </li>
+            <li>
+              If |proofConfig|.|created| is set and if the value is not a
+              valid [[XMLSCHEMA11-2]] datetime, an error MUST be raised and SHOULD convey
+              an error type of
+              <a data-cite="VC-DATA-INTEGRITY#PROOF_GENERATION_ERROR">PROOF_GENERATION_ERROR</a>.
+            </li>
+            <li>
+              Let |canonicalProofConfig| be the result of applying the
+              JSON Canonicalization Scheme [[RFC8785]] to the |proofConfig|.
+            </li>
+            <li>
+              Return |canonicalProofConfig|.
+            </li>
+          </ol>
+
+        </section>
+
+        <section>
+          <h4>Proof Serialization (jades-jcs-2024)</h4>
+
+          <p>
+            The following algorithm specifies how to serialize a digital signature from
+            a set of cryptographic hash data. This
+            algorithm is designed to be used in conjunction with the algorithms defined
+            in the Data Integrity [[VC-DATA-INTEGRITY]] specification,
+            <a data-cite="vc-data-integrity#algorithms">
+              Section 4: Algorithms</a>. Required inputs are
+            cryptographic hash data (|hashData|) and
+            <em>proof options</em> (|options|). The
+            <em>proof options</em> MUST contain a type identifier for the
+            <a data-cite="vc-data-integrity#dfn-cryptosuite">
+              cryptographic suite</a> (|type|) and MAY contain a cryptosuite
+            identifier (|cryptosuite|). A single <em>digital proof</em> value
+            represented as series of bytes is produced as output.
+          </p>
+
+          <ol class="algorithm">
+            <li>
+              Let |privateKeyBytes| be the result of retrieving the
+              private key bytes associated with the
+              |options|.|verificationMethod| value.
+            </li>
+            <li>
+              Let |proofBytes| be the result of applying the applicable signature
+              algorithm, with |hashData| as the data
+              to be signed using the private key specified by |privateKeyBytes|.
+              |proofBytes| will be exactly 64 bytes in size for a P-256 key, and
+              96 bytes in size for a P-384 key.
+            </li>
+            <li>
+              Return |proofBytes| as the <em>digital proof</em>.
+            </li>
+          </ol>
+
+        </section>
+
+        <section>
+          <h4>Proof Verification (jades-jcs-2024)</h4>
+
+          <p>
+            The following algorithm specifies how to verify a digital signature from
+            a set of cryptographic hash data. This
+            algorithm is designed to be used in conjunction with the algorithms defined
+            in the Data Integrity [[VC-DATA-INTEGRITY]] specification,
+            <a data-cite="vc-data-integrity#algorithms">
+              Section 4: Algorithms</a>. Required inputs are
+            cryptographic hash data (|hashData|),
+            a digital signature (|proofBytes|), and
+            proof options (|options|). A <em>verification result</em>
+            represented as a boolean value is produced as output.
+          </p>
+
+          <ol class="algorithm">
+            <li>
+              Let |publicKeyBytes| be the result of retrieving the
+              public key bytes associated with the
+              |options|.|verificationMethod| value as described in the
+              [[[controller-document]]] specification,
+              <a data-cite="controller-document#retrieve-verification-method">
+                Section: Retrieve Verification Method</a>.
+            </li>
+            <li>
+              Let |verificationResult| be the result of applying the applicable verification
+              algorithm,
+              with |hashData| as the data to be verified against the
+              |proofBytes| using the public key specified by
+              |publicKeyBytes|.
+            </li>
+            <li>
+              Return |verificationResult| as the <em>verification result</em>.
+            </li>
+          </ol>
+
+        </section>
+      </section>
+    </section>
+
+    <section id="jades">
+      <h2>JAdES Detached Signature</h2>
+
+      <p>
+        The <code>proofValue</code> property of the proof MUST be a detached JWS
+        produced according to [[RFC7797]].
+        <p class="advisement">
+          The header of the detached JWS MUST look like this:
+          <code>{"b64":false,"crit":["b64"],"alg":"PS256"}</code>
+          where <code>alg</code> is a value registered in [[IANA_JOSE]]
+          AND is present in the supported algorithms table of this suite.
+        </p>
+      </p>
+
+      <p>
+        The detached JSW MUST be compliant with JSON Advanced
+        Electronic Signatures (JAdES - see <a href="https://www.etsi.org/deliver/etsi_ts/119100_119199/11918201/01.01.01_60/ts_11918201v010101p.pdf">ETSI TS 119 182-1</a>,
+        which is a set of extensions to JSON Web Signature ([[RFC7515]])
+      </p>
+
+      <p>
+        The following rules apply to constructing the detached JWS:
+        <ol>
+          <li>
+            `alg`: A signed header parameter that specifies the signature algorithm, with syntax and semantics defined in [[RFC7515]].
+            The value of this parameter MUST be `di-jades`.
+          </li>
+          <li>
+            `cty`: A signed header parameter that specifies the media type of the JWS Payload, with syntax and semantics defined in [[RFC7515]].
+            The value of this parameter MUST be `vc`.
+          </li>
+          <li>
+            `kid`: A signed header parameter that specifies the key ID, with syntax and semantics defined in [[RFC7515]]. The content of the parameter must be a DID URI identifying a public key.
+          </li>
+          <li>
+            `crit`: A signed header parameter that specifies critical extensions, with syntax and semantics defined in [[RFC7515]]. The parameter must contain all JAdES defined signed header parameters and optionally `b64`, while excluding `alg`, `cty`, `kid` and `crit`.
+          </li>
+          <li>
+            `b64`: An optional signed header parameter, with syntax and semantics defined in [[RFC7515]].
+          </li>
+          <li>
+            `sigT`: A signed header parameter that specifies the signature time. The value must specify the time at which the signer claims to have performed the signing process. The value must be formatted according to [[RFC3339]], include UTC time, and must not contain fractional seconds. For example: `2023-11-04T10:16:12Z`.
+          </li>
+          <li>
+            `sigPl`: A signed header parameter that specifies the signer's address. The value must be a JSON object with syntax and semantics from schema.org's definition of the <a href="https://schema.org/PostalAddress">PostalAddress</a> type, where at least one property must be defined.
+          </li>
+        </ol>
+      </p>
+    </section>
+
+    <section class="appendix informative">
+      <h2>Test Vectors</h2>
+      <section>
+        <h3>Representation: jades-rdfc-2024, with curve P-256</h3>
+        <p>
+          The signer needs to generate a private/public key pair with the private key used
+          for signing and the public key made available for verification. The
+          representation of the public key,
+          and the representation of the private key, are shown below.
+        </p>
+        <pre class="example nohighlight" title="Private and Public keys for Signature"
+             data-include="TestVectors/p256KeyPair.json"
+             data-include-format="text">
+        </pre>
+
+        <p>
+          Signing begins with a credential without an attached proof, which is converted
+          to canonical form, which is then hashed, as shown in the following three examples.
+        </p>
+
+        <pre class="example nohighlight" title="Credential without Proof" data-include="TestVectors/unsigned.json"
+             data-include-format="text"></pre>
+
+        <pre class="example nohighlight" title="Canonical Credential without Proof" data-include="TestVectors/jades-rdfc-2024-p256/canonDocJAdESP256.txt"
+             data-include-format="text"></pre>
+
+
+        <pre class="example nohighlight" title="Hash of Canonical Credential without Proof (hex)"
+             data-include="TestVectors/jades-rdfc-2024-p256/docHashJAdESP256.txt" data-include-format="text"></pre>
+
+        <p>
+          The next step is to take the proof options document, convert it to canonical form,
+          and obtain its hash, as shown in the next three examples.
+        </p>
+
+        <pre class="example nohighlight" title="Proof Options Document"
+             data-include="TestVectors/jades-rdfc-2024-p256/proofConfigJAdESP256.json" data-include-format="text"></pre>
+
+        <pre class="example nohighlight" title="Canonical Proof Options Document"
+             data-include="TestVectors/jades-rdfc-2024-p256/proofCanonJAdESP256.txt" data-include-format="text"></pre>
+
+        <pre class="example nohighlight" title="Hash of Canonical Proof Options Document (hex)"
+             data-include="TestVectors/jades-rdfc-2024-p256/proofHashJAdESP256.txt" data-include-format="text"></pre>
+
+        <p>
+          Finally, we concatenate the hash of the proof options followed by the hash of the credential without proof, use the private key with the combined hash to
+          compute the ECDSA signature, and then base-58-btc encode the signature.
+        </p>
+
+        <pre class="example nohighlight" title="Combine hashes of Proof Options and Credential (hex)"
+             data-include="TestVectors/jades-rdfc-2024-p256/combinedHashJAdESP256.txt" data-include-format="text"></pre>
+
+        <pre class="example nohighlight" title="Signature of Combined Hashes (hex)"
+             data-include="TestVectors/jades-rdfc-2024-p256/sigHexJAdESP256.txt" data-include-format="text"></pre>
+
+        <pre class="example nohighlight" title="Signature of Combined Hashes base-58-btc"
+             data-include="TestVectors/jades-rdfc-2024-p256/sigBTC58JAdESP256.txt" data-include-format="text"></pre>
+
+        <p>Assemble the signed credential with the following two steps:</p>
+        <ol>
+          <li>
+            Add the <code>proofValue</code> field with the previously computed base-58-btc
+            value to the proof options document.
+          </li>
+          <li>
+            Set the <code>proof</code> field of the credential to the augmented proof
+            option document, based on the rules in <a href="#jades"></a>.
+          </li>
+        </ol>
+
+        <pre class="example nohighlight" title="Signed Credential"
+             data-include="TestVectors/jades-rdfc-2024-p256/signedJAdESP256.json" data-include-format="text"></pre>
+      </section>
+      <section>
+        <h3>Representation: jades-jcs-2024 with curve P-256</h3>
+        <p>
+          The signer needs to generate a private/public key pair with the private key used
+          for signing and the public key made available for verification. The
+          representation of the public key,
+          and the representation of the private key, are shown below.
+        </p>
+        <pre class="example nohighlight" title="Private and Public keys for Signature"
+             data-include="TestVectors/p256KeyPair.json"
+             data-include-format="text">
+        </pre>
+
+        <p>
+          Signing begins with a credential without an attached proof, which is converted
+          to canonical form, which is then hashed, as shown in the following three examples.
+        </p>
+
+        <pre class="example nohighlight" title="Credential without Proof" data-include="TestVectors/unsigned.json"
+             data-include-format="text"></pre>
+
+        <pre class="example nohighlight" title="Canonical Credential without Proof" data-include="TestVectors/jades-jcs-2024-p256/canonDocJCSJAdESP256.txt"
+             data-include-format="text"></pre>
+
+
+        <pre class="example nohighlight" title="Hash of Canonical Credential without Proof (hex)"
+             data-include="TestVectors/jades-jcs-2024-p256/docHashJCSJAdESP256.txt" data-include-format="text"></pre>
+
+        <p>
+          The next step is to take the proof options document, convert it to canonical form,
+          and obtain its hash, as shown in the next three examples.
+        </p>
+
+        <pre class="example nohighlight" title="Proof Options Document"
+             data-include="TestVectors/jades-jcs-2024-p256/proofConfigJCSJAdESP256.json" data-include-format="text"></pre>
+
+        <pre class="example nohighlight" title="Canonical Proof Options Document"
+             data-include="TestVectors/jades-jcs-2024-p256/proofCanonJCSJAdESP256.txt" data-include-format="text"></pre>
+
+        <pre class="example nohighlight" title="Hash of Canonical Proof Options Document (hex)"
+             data-include="TestVectors/jades-jcs-2024-p256/proofHashJCSJAdESP256.txt" data-include-format="text"></pre>
+
+        <p>
+          Finally, we concatenate the hash of the proof options followed by the hash of the credential without proof, use the private key with the combined hash to
+          compute the ECDSA signature, and then base-58-btc encode the signature.
+        </p>
+
+        <pre class="example nohighlight" title="Combine hashes of Proof Options and Credential (hex)"
+             data-include="TestVectors/jades-jcs-2024-p256/combinedHashJCSJAdESP256.txt" data-include-format="text"></pre>
+
+        <pre class="example nohighlight" title="Signature of Combined Hashes (hex)"
+             data-include="TestVectors/jades-jcs-2024-p256/sigHexJCSJAdESP256.txt" data-include-format="text"></pre>
+
+        <pre class="example nohighlight" title="Signature of Combined Hashes base-58-btc"
+             data-include="TestVectors/jades-jcs-2024-p256/sigBTC58JCSJAdESP256.txt" data-include-format="text"></pre>
+
+        <p>Assemble the signed credential with the following three steps:</p>
+        <ol>
+          <li>
+            Add the <code>proofValue</code> field with the previously computed base-58-btc
+            value to the proof options document.
+          </li>
+          <li>
+            Set the proof options <code>@context</code> field to the value of the
+            <var>unsecuredDocument.@context</var>.
+          </li>
+          <li>
+            Set the <code>proof</code> field of the credential to the augmented proof
+            option document, based on the rules in <a href="#jades"></a>.
+          </li>
+        </ol>
+
+        <pre class="example nohighlight" title="Signed Credential"
+             data-include="TestVectors/jades-jcs-2024-p256/signedJCSJAdESP256.json" data-include-format="text"></pre>
+      </section>
+    </section>
+
+    <section id="conformance">
+      <p>
+        A <dfn>conforming document</dfn> is any concrete expression of the data model
+        that complies with the normative statements in this specification.
+        Specifically, all relevant normative statements in Sections
+        <a href="#terminology"></a> and <a href="#algorithms"></a>
+        of this document MUST be enforced.
+        </p>
+
+        <p>
+          A <code>conforming processor</code> is any algorithm realized as software and/or
+          hardware that generates or consumes a <a>conforming document</a>. Conforming
+          processors MUST produce errors when non-conforming documents are consumed.
+                  </p>
+        <p>
+        This document also contains examples that contain JSON and JSON-LD content.
+        Some of these examples contain characters that are invalid JSON, such as
+        inline comments (<code>//</code>) and the use of ellipsis (<code>...</code>)
+        to denote information that adds little value to the example. Implementers are
+        cautioned to remove this content if they desire to use the information as
+        valid JSON or JSON-LD.
+        </p>
+    </section>
+
+    <section>
+      <h2>Privacy Considerations</h2>
+
+      <div class="issue">
+        TODO: We need to add a complete list of privacy considerations.
+      </div>
+    </section>
+
+    <section>
+      <h2>Security Considerations</h2>
+      <p>
+        The following section describes security considerations that developers
+        implementing this specification should be aware of in order to create
+        secure software.
+      </p>
+
+      <p class="note">This specification relies on URDNA2015.</p>
+
+      <p class="note">This specification relies on [[IANA_JOSE]], please review [[RFC8725]].</p>
+
+      <div class="issue">
+        TODO: We need to add a complete list of security considerations.
+      </div>
+
+    </section>
+  </body>
+</html>
